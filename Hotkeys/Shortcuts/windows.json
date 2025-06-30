@@ -1,0 +1,13 @@
+{
+  "ID": "PowerToysRun.ShortcutFinder",
+  "Name": "Shortcut Finder",
+  "Description": "Find and copy keyboard shortcuts for any app",
+  "Author": "Твоє ім'я або Nickname",
+  "Version": "1.0.0",
+  "Language": "csharp",
+  "Website": "https://github.com/your-repo-link",
+  "ExecuteFileName": "PowerToysRun.ShortcutFinder.Plugin.dll",
+  "IcoPath": "icon.png",
+  "Disabled": false,
+  "ActionKeyword": "shortcut"
+}

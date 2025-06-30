@@ -1,0 +1,14 @@
+[
+  {
+    "shortcut": "Ctrl+B",
+    "description": "Bold text",
+    "keywords": ["bold", "text"],
+    "category": "Formatting"
+  },
+  {
+    "shortcut": "Ctrl+U",
+    "description": "Underline text",
+    "keywords": ["underline", "text"],
+    "category": "Formatting"
+  }
+]

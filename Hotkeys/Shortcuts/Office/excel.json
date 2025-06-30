@@ -1,0 +1,14 @@
+[
+  {
+    "shortcut": "Ctrl+Shift+L",
+    "description": "Toggle filters",
+    "keywords": ["filter", "toggle"],
+    "category": "Data"
+  },
+  {
+    "shortcut": "Alt+= (Alt+Plus)",
+    "description": "AutoSum",
+    "keywords": ["sum", "auto"],
+    "category": "Formulas"
+  }
+]
