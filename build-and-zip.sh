@@ -27,10 +27,12 @@ PUBLISH_X64=$(find "$OUT_ROOT" -type d -path '*win-x64/publish' | head -n 1)
 
 echo "ℹ️  Using publish folder: $PUBLISH_X64"
 cp -r "$PUBLISH_X64"/* "$DEST_DIR"
+# include shortcuts directory for search data
+cp -r ./Hotkeys/Shortcuts "$DEST_DIR/Shortcuts"
 
 echo "📦 Zipping results..."
 ZIP_X64="./Hotkeys-x64.zip"
-zip -r "$ZIP_X64" "$DEST_DIR"/*
+(cd "$DEST_DIR" && zip -r "../$(basename "$ZIP_X64")" .)
 
 echo "✅ Done! Created:"
 echo " - $ZIP_X64"

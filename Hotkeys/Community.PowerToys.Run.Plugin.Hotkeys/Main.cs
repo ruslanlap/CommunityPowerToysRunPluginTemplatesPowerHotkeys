@@ -128,6 +128,21 @@ namespace Community.PowerToys.Run.Plugin.Hotkeys
         public List<Result> Query(Query query)
         {
             string search = query.Search?.Trim();
+            if (string.IsNullOrWhiteSpace(search))
+            {
+                return new List<Result>
+                {
+                    new Result
+                    {
+                        QueryTextDisplay = search,
+                        IcoPath = IconPath,
+                        Title = "Enter a keyword to search hotkeys",
+                        SubTitle = "Example: hk copy",
+                        Action = _ => true,
+                        ContextData = search
+                    }
+                };
+            }
             var found = SearchShortcuts(search);
 
             var results = new List<Result>();
