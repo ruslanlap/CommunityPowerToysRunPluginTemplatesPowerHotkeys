@@ -1,4 +1,3 @@
-// ===== 8. Refactored Main.cs =====
 using ManagedCommon;
 using System;
 using System.Collections.Generic;
@@ -11,6 +10,9 @@ using Wox.Plugin;
 using PowerToysRun.ShortcutFinder.Plugin.Helpers;
 using Community.PowerToys.Run.Plugin.Hotkeys.Services;
 using Community.PowerToys.Run.Plugin.Hotkeys.Models;
+using EasyCaching.Core;
+using EasyCaching.InMemory;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Community.PowerToys.Run.Plugin.Hotkeys
 {
@@ -48,19 +50,79 @@ namespace Community.PowerToys.Run.Plugin.Hotkeys
                 // Initialize logger
                 _logger = new PowerToysLogger();
 
+                // Initialize cache service (add EasyCaching configuration)
+                var cacheProvider = CreateCacheProvider();
+                var cacheService = new EasyCacheService(cacheProvider, _logger);
+
                 // Initialize repository
                 _shortcutRepository = new ShortcutRepository(shortcutsDirectory, _logger);
 
-                // Initialize query processor
-                _queryProcessor = new QueryProcessor(_shortcutRepository, _logger, Context);
+                // Initialize search algorithms
+                var fuzzyMatcher = new FuzzyMatcher(_logger);
+                var abbreviationMatcher = new AbbreviationMatcher(_logger);
+                var scoreCalculator = new ScoreCalculator(_logger);
 
-                _logger.LogInfo("Hotkeys plugin services initialized successfully");
+                // Initialize enhanced search engine
+                var searchEngine = new EnhancedSearchEngine(
+                    _shortcutRepository,
+                    fuzzyMatcher,
+                    abbreviationMatcher,
+                    scoreCalculator,
+                    cacheService,
+                    _logger);
+
+                // Initialize query processor with search engine
+                _queryProcessor = new QueryProcessor(_shortcutRepository, _logger, Context, searchEngine);
+
+                // Warmup cache in background
+                _ = Task.Run(async () =>
+                {
+                    try
+                    {
+                        await searchEngine.WarmupCacheAsync();
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger?.LogError($"Cache warmup failed: {ex.Message}", ex);
+                    }
+                });
+
+                _logger.LogInfo("Enhanced Hotkeys plugin services initialized successfully");
             }
             catch (Exception ex)
             {
                 _logger?.LogError($"Failed to initialize plugin services: {ex.Message}", ex);
                 throw;
             }
+        }
+
+        private IEasyCachingProvider CreateCacheProvider()
+        {
+            // For plugin context, we'll create a simple in-memory cache
+            // In a full ASP.NET Core app, this would be configured in Startup.cs
+            var services = new ServiceCollection();
+
+            services.AddEasyCaching(options =>
+            {
+                options.UseInMemory(config =>
+                {
+                    config.DBConfig = new InMemoryCachingOptions
+                    {
+                        ExpirationScanFrequency = 60,
+                        SizeLimit = 1000,
+                        EnableReadDeepClone = true,
+                        EnableWriteDeepClone = false
+                    };
+                    config.MaxRdSecond = 120;
+                    config.EnableLogging = false;
+                    config.LockMs = 5000;
+                    config.SleepMs = 300;
+                }, "hotkeys");
+            });
+
+            var serviceProvider = services.BuildServiceProvider();
+            var factory = serviceProvider.GetService<IEasyCachingProviderFactory>();
+            return factory.GetCachingProvider("hotkeys");
         }
 
         public List<Result> Query(Query query)
