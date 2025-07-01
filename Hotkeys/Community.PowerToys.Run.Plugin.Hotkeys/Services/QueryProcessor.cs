@@ -5,7 +5,6 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Input;
 using ManagedCommon;
-using PowerToysRun.ShortcutFinder.Plugin.Helpers;
 using Wox.Plugin;
 using Community.PowerToys.Run.Plugin.Hotkeys.Models;
 
