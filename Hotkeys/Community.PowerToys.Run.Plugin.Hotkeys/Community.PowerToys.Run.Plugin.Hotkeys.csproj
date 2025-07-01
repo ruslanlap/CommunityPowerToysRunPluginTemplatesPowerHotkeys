@@ -9,12 +9,7 @@
 
   <ItemGroup>
     <PackageReference Include="Community.PowerToys.Run.Plugin.Dependencies" Version="0.91.0" />
-    <PackageReference Include="System.Reactive" Version="6.0.0" />
     <PackageReference Include="System.Threading.Tasks.Extensions" Version="4.5.4" />
-    <!-- Enhanced Search & Scoring Dependencies -->
-    <PackageReference Include="FuzzySharp" Version="2.0.2" />
-    <PackageReference Include="EasyCaching.InMemory" Version="1.9.2" />
-    <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="8.0.0" />
   </ItemGroup>
 
   <ItemGroup>
