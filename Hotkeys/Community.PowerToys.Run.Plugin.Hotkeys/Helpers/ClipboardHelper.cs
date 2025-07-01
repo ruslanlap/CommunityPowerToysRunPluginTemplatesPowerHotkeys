@@ -1,6 +1,6 @@
 using System.Windows;
 
-namespace Community.PowerToys.Run.Plugin.Hotkeys.Helpers
+namespace PowerToysRun.ShortcutFinder.Plugin.Helpers
 {
     public static class ClipboardHelper
     {

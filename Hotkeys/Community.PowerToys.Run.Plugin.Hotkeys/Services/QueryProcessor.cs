@@ -1,3 +1,4 @@
+// ===== 5. QueryProcessor.cs =====
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -5,9 +6,9 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Input;
 using ManagedCommon;
+using PowerToysRun.ShortcutFinder.Plugin.Helpers;
 using Wox.Plugin;
 using Community.PowerToys.Run.Plugin.Hotkeys.Models;
-using Community.PowerToys.Run.Plugin.Hotkeys.Helpers;
 
 namespace Community.PowerToys.Run.Plugin.Hotkeys.Services
 {
@@ -16,14 +17,18 @@ namespace Community.PowerToys.Run.Plugin.Hotkeys.Services
         private readonly IShortcutRepository _repository;
         private readonly ILogger _logger;
         private readonly PluginInitContext _context;
-        private readonly ISearchEngine _searchEngine;
 
-        public QueryProcessor(IShortcutRepository repository, ILogger logger, PluginInitContext context, ISearchEngine searchEngine)
+        // Simple in-memory cache for search results
+        private readonly System.Collections.Concurrent.ConcurrentDictionary<string, CacheEntry> _searchCache = new();
+        private readonly TimeSpan _cacheDuration = TimeSpan.FromMinutes(5);
+
+        private record CacheEntry(List<Result> Results, DateTime Timestamp);
+
+        public QueryProcessor(IShortcutRepository repository, ILogger logger, PluginInitContext context)
         {
             _repository = repository ?? throw new ArgumentNullException(nameof(repository));
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
             _context = context ?? throw new ArgumentNullException(nameof(context));
-            _searchEngine = searchEngine ?? throw new ArgumentNullException(nameof(searchEngine));
         }
 
         public async Task<List<Result>> ProcessQueryAsync(Query query, string iconPath, CancellationToken cancellationToken = default)
@@ -84,39 +89,31 @@ namespace Community.PowerToys.Run.Plugin.Hotkeys.Services
             return new ParsedQuery("search", null, query);
         }
 
-        // === ОНОВЛЕНА ВЕРСІЯ ===
         private async Task<List<Result>> SearchShortcutsAsync(string searchTerm, string appFilter, string originalQuery, string iconPath, CancellationToken cancellationToken)
         {
-            var searchOptions = new SearchOptions
-            {
-                EnableFuzzySearch = true,
-                EnableAbbreviationSearch = true,
-                UseCache = true,
-                MaxResults = 50,
-                FuzzyThreshold = 60.0,
-                BoostRecentlyUsed = true,
-                BoostPopularApps = true
-            };
-
-            var searchResults = await _searchEngine.SearchShortcutsAsync(searchTerm, appFilter, searchOptions, cancellationToken);
+               // Check cache first
+                string cacheKey = $"{searchTerm}|{appFilter}";
+                if (_searchCache.TryGetValue(cacheKey, out var cached) &&
+                    DateTime.UtcNow - cached.Timestamp < _cacheDuration)
+                {
+                    return cached.Results;
+                }
+            var shortcuts = await _repository.SearchShortcutsAsync(searchTerm, appFilter, cancellationToken);
             var results = new List<Result>();
 
-            foreach (var searchResult in searchResults)
+            foreach (var shortcut in shortcuts)
             {
-                var shortcut = searchResult.Shortcut;
-
-                // Create enhanced subtitle with match information
-                var subtitle = FormatEnhancedSubTitle(shortcut, appFilter, searchResult);
+                var score = CalculateScore(shortcut, searchTerm, appFilter);
 
                 results.Add(new Result
                 {
                     QueryTextDisplay = originalQuery,
                     IcoPath = iconPath,
                     Title = FormatTitle(shortcut),
-                    SubTitle = subtitle,
-                    ToolTipData = CreateEnhancedToolTip(shortcut, searchResult),
-                    Score = (int)searchResult.Score,
-                    Action = _ => CopyShortcutActionWithStats(shortcut),
+                    SubTitle = FormatSubTitle(shortcut, appFilter),
+                    ToolTipData = new ToolTipData(shortcut.Description, $"{shortcut.Shortcut}\n\nSource: {shortcut.Source}\nCategory: {shortcut.Category}"),
+                    Score = score,
+                    Action = _ => CopyShortcutAction(shortcut),
                     ContextData = shortcut
                 });
             }
@@ -125,101 +122,13 @@ namespace Community.PowerToys.Run.Plugin.Hotkeys.Services
             {
                 results.Add(CreateNoResultsFound(searchTerm, appFilter, originalQuery, iconPath));
             }
+            var ordered = results.OrderByDescending(r => r.Score).ToList();
+            _searchCache[cacheKey] = new CacheEntry(ordered, DateTime.UtcNow);
+            CleanCache();
+            return ordered;
 
-            return results;
+            return results.OrderByDescending(r => r.Score).ToList();
         }
-
-        private string FormatEnhancedSubTitle(ShortcutInfo shortcut, string appFilter, SearchResult searchResult)
-        {
-            var subtitle = $"{shortcut.Source} | {shortcut.Category ?? "General"}";
-
-            // Add match type indicator
-            var matchIndicator = searchResult.MatchType switch
-            {
-                SearchMatchType.ExactMatch => "🎯",
-                SearchMatchType.FuzzyMatch => "🔍",
-                SearchMatchType.AbbreviationMatch => "📝",
-                SearchMatchType.PartialMatch => "⭐",
-                SearchMatchType.KeywordMatch => "🏷️",
-                SearchMatchType.CategoryMatch => "📁",
-                _ => ""
-            };
-
-            if (!string.IsNullOrEmpty(matchIndicator))
-                subtitle = $"{matchIndicator} {subtitle}";
-
-            // Add cache indicator
-            if (searchResult.IsFromCache)
-                subtitle += " ⚡";
-
-            // Add usage count if significant
-            if (shortcut.UsageCount > 0)
-                subtitle += $" • Used {shortcut.UsageCount}x";
-
-            // Add app filter indicator
-            if (!string.IsNullOrWhiteSpace(appFilter))
-                subtitle = $"📍 {subtitle} (filtered by {appFilter})";
-
-            return subtitle;
-        }
-
-        private ToolTipData CreateEnhancedToolTip(ShortcutInfo shortcut, SearchResult searchResult)
-        {
-            var details = $"{shortcut.Shortcut}\n\n" +
-                          $"Source: {shortcut.Source}\n" +
-                          $"Category: {shortcut.Category}\n" +
-                          $"Match Type: {searchResult.MatchType}\n" +
-                          $"Score: {searchResult.Score:F1}";
-
-            if (searchResult.MatchedTerms?.Any() == true)
-            {
-                details += $"\nMatched: {string.Join(", ", searchResult.MatchedTerms)}";
-            }
-
-            if (shortcut.UsageCount > 0)
-            {
-                details += $"\nUsage Count: {shortcut.UsageCount}";
-            }
-
-            if (!string.IsNullOrWhiteSpace(shortcut.Platform))
-            {
-                details += $"\nPlatform: {shortcut.Platform}";
-            }
-
-            if (!string.IsNullOrWhiteSpace(shortcut.Difficulty))
-            {
-                details += $"\nDifficulty: {shortcut.Difficulty}";
-            }
-
-            if (shortcut.IsGlobal)
-            {
-                details += "\nGlobal: Yes";
-            }
-
-            return new ToolTipData(shortcut.Description, details);
-        }
-
-        private bool CopyShortcutActionWithStats(ShortcutInfo shortcut)
-        {
-            try
-            {
-                ClipboardHelper.SetClipboard(shortcut.Shortcut);
-
-                // Update usage statistics
-                _searchEngine.UpdateUsageStatistics(shortcut);
-
-                _context.API.ShowMsg("Hotkey Copied", $"'{shortcut.Shortcut}' copied to clipboard", string.Empty);
-                return true;
-            }
-            catch (Exception ex)
-            {
-                _logger?.LogError($"Failed to copy shortcut: {ex.Message}", ex);
-                _context.API.ShowMsg("Error", "Failed to copy shortcut to clipboard", string.Empty);
-                return false;
-            }
-        }
-
-        // Далі стандартні методи (GetAvailableAppsAsync, GetAppShortcutsAsync, інші) залишаються без змін...
 
         private async Task<List<Result>> GetAvailableAppsAsync(string iconPath, CancellationToken cancellationToken)
         {
@@ -267,7 +176,7 @@ namespace Community.PowerToys.Run.Plugin.Hotkeys.Services
                         Title = FormatTitle(shortcut),
                         SubTitle = FormatSubTitle(shortcut),
                         ToolTipData = new ToolTipData(shortcut.Description, $"{shortcut.Shortcut}\n\nCategory: {shortcut.Category}"),
-                        Action = _ => CopyShortcutActionWithStats(shortcut),
+                        Action = _ => CopyShortcutAction(shortcut),
                         ContextData = shortcut
                     });
                 }
@@ -337,6 +246,22 @@ namespace Community.PowerToys.Run.Plugin.Hotkeys.Services
             };
         }
 
+        private bool CopyShortcutAction(ShortcutInfo shortcut)
+        {
+            try
+            {
+                ClipboardHelper.SetClipboard(shortcut.Shortcut);
+                _context.API.ShowMsg("Hotkey Copied", $"'{shortcut.Shortcut}' copied to clipboard", string.Empty);
+                return true;
+            }
+            catch (Exception ex)
+            {
+                _logger?.LogError($"Failed to copy shortcut: {ex.Message}", ex);
+                _context.API.ShowMsg("Error", "Failed to copy shortcut to clipboard", string.Empty);
+                return false;
+            }
+        }
+
         private Result CreateNoResultsFound(string searchTerm, string appFilter, string originalQuery, string iconPath)
         {
             string message = !string.IsNullOrWhiteSpace(appFilter)
@@ -373,6 +298,62 @@ namespace Community.PowerToys.Run.Plugin.Hotkeys.Services
             }
 
             return subtitle;
+        }
+
+        private static int CalculateScore(ShortcutInfo shortcut, string query, string appFilter = null)
+        {
+            if (string.IsNullOrWhiteSpace(query)) return 0;
+
+            int score = 0;
+            string q = query.ToLowerInvariant();
+
+            if (!string.IsNullOrWhiteSpace(appFilter))
+            {
+                string filter = appFilter.ToLowerInvariant();
+                if (shortcut.Source?.ToLowerInvariant() == filter)
+                    score += 200;
+                else if (shortcut.Source?.ToLowerInvariant().Contains(filter) == true)
+                    score += 100;
+            }
+
+            if (shortcut.Shortcut?.ToLowerInvariant() == q)
+                score += 1000;
+            else if (shortcut.Shortcut?.ToLowerInvariant().Contains(q) == true)
+                score += 800;
+
+            if (shortcut.Description?.ToLowerInvariant() == q)
+                score += 900;
+            else if (shortcut.Description?.ToLowerInvariant().StartsWith(q) == true)
+                score += 700;
+            else if (shortcut.Description?.ToLowerInvariant().Contains(q) == true)
+                score += 500;
+
+            if (shortcut.Keywords?.Any(k => k.ToLowerInvariant() == q) == true)
+                score += 600;
+            else if (shortcut.Keywords?.Any(k => k.ToLowerInvariant().Contains(q)) == true)
+                score += 300;
+
+            var popularApps = new[] { "chrome", "firefox", "vscode", "word", "excel", "windows", "photoshop" };
+            if (popularApps.Contains(shortcut.Source?.ToLowerInvariant()))
+                score += 50;
+
+            return score;
+        }
+        private void CleanCache()
+        {
+            foreach (var entry in _searchCache.ToArray())
+            {
+                if (DateTime.UtcNow - entry.Value.Timestamp > _cacheDuration)
+                {
+                    _searchCache.TryRemove(entry.Key, out _);
+                }
+            }
+
+            if (_searchCache.Count > 100)
+            {
+                var oldest = _searchCache.OrderBy(kvp => kvp.Value.Timestamp).First();
+                _searchCache.TryRemove(oldest.Key, out _);
+            }
         }
     }
 }
