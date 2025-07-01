@@ -47,32 +47,54 @@ namespace Community.PowerToys.Run.Plugin.Hotkeys
         {
             try
             {
-                _logger = new PowerToysLogger();
-                _logger.LogInfo("Initializing Hotkeys plugin services...");
+                var shortcutsDirectory = Path.Combine(Context.CurrentPluginMetadata.PluginDirectory, "Shortcuts");
 
-                // Initialize simple cache service (without EasyCaching dependency)
-                var cacheService = new SimpleCacheService();
+                // Initialize logger
+                _logger = new PowerToysLogger();
+
+                // Initialize cache service (add EasyCaching configuration)
+                var cacheProvider = CreateCacheProvider();
+                var cacheService = new EasyCacheService(cacheProvider, _logger);
 
                 // Initialize repository
-                var pluginDirectory = Path.GetDirectoryName(Context.CurrentPluginMetadata.ExecuteFilePath);
-                var shortcutsPath = Path.Combine(pluginDirectory, "Shortcuts");
-                _shortcutRepository = new ShortcutRepository(shortcutsPath, cacheService, _logger);
+                _shortcutRepository = new ShortcutRepository(shortcutsDirectory, _logger);
 
-                // Initialize simple search engine
-                var searchEngine = new SimpleSearchEngine(_shortcutRepository, _logger);
+                // Initialize search algorithms
+                var fuzzyMatcher = new FuzzyMatcher(_logger);
+                var abbreviationMatcher = new AbbreviationMatcher(_logger);
+                var scoreCalculator = new ScoreCalculator(_logger);
 
-                // Initialize query processor
+                // Initialize enhanced search engine
+                var searchEngine = new EnhancedSearchEngine(
+                    _shortcutRepository,
+                    fuzzyMatcher,
+                    abbreviationMatcher,
+                    scoreCalculator,
+                    cacheService,
+                    _logger);
+
+                // Initialize query processor with search engine
                 _queryProcessor = new QueryProcessor(_shortcutRepository, _logger, Context, searchEngine);
 
-                _logger.LogInfo("Hotkeys plugin services initialized successfully");
+                // Warmup cache in background
+                _ = Task.Run(async () =>
+                {
+                    try
+                    {
+                        await searchEngine.WarmupCacheAsync();
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger?.LogError($"Cache warmup failed: {ex.Message}", ex);
+                    }
+                });
+
+                _logger.LogInfo("Enhanced Hotkeys plugin services initialized successfully");
             }
             catch (Exception ex)
             {
                 _logger?.LogError($"Failed to initialize plugin services: {ex.Message}", ex);
-                // Don't throw, create minimal fallback
-                _logger = new PowerToysLogger();
-                _shortcutRepository = new ShortcutRepository("", new SimpleCacheService(), _logger);
-                _queryProcessor = new QueryProcessor(_shortcutRepository, _logger, Context, new SimpleSearchEngine(_shortcutRepository, _logger));
+                throw;
             }
         }
 
