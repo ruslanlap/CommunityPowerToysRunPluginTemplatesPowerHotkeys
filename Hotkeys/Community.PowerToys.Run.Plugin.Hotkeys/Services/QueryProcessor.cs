@@ -7,6 +7,7 @@ using System.Windows.Input;
 using ManagedCommon;
 using Wox.Plugin;
 using Community.PowerToys.Run.Plugin.Hotkeys.Models;
+using Community.PowerToys.Run.Plugin.Hotkeys.Helpers;
 
 namespace Community.PowerToys.Run.Plugin.Hotkeys.Services
 {
