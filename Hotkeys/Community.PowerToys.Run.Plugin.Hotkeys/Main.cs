@@ -312,33 +312,8 @@ namespace Community.PowerToys.Run.Plugin.Hotkeys
             }
 
             return results.OrderByDescending(r => r.Score).ToList();
-            }
         }
-
-            // Якщо нічого не знайдено
-            if (results.Count == 0)
-            {
-                string noResultsMessage = !string.IsNullOrWhiteSpace(appFilter) 
-                    ? $"No hotkeys found for '{searchTerm}' in {appFilter}"
-                    : $"No hotkeys found for '{searchTerm}'";
-
-                string suggestion = !string.IsNullOrWhiteSpace(appFilter)
-                    ? $"Try removing /{appFilter} filter or check app name"
-                    : "Try: 'apps' to see available apps, or 'search /appname' to filter by app";
-
-                results.Add(new Result
-                {
-                    QueryTextDisplay = search,
-                    IcoPath = IconPath,
-                    Title = noResultsMessage,
-                    SubTitle = suggestion,
-                    Action = _ => true,
-                    ContextData = search
-                });
             }
-
-            return results.OrderByDescending(r => r.Score).ToList();
-        }
 
         private List<Result> GetHelpResults()
         {
