@@ -126,8 +126,6 @@ namespace Community.PowerToys.Run.Plugin.Hotkeys.Services
             _searchCache[cacheKey] = new CacheEntry(ordered, DateTime.UtcNow);
             CleanCache();
             return ordered;
-
-            return results.OrderByDescending(r => r.Score).ToList();
         }
 
         private async Task<List<Result>> GetAvailableAppsAsync(string iconPath, CancellationToken cancellationToken)
