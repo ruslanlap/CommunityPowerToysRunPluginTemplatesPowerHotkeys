@@ -201,7 +201,7 @@ namespace Community.PowerToys.Run.Plugin.CheatSheets
             {
                 Key = "CacheDurationHours",
                 DisplayLabel = "Cache Duration (hours)",
-                Value = true
+                Value = 2
             }
         };
 

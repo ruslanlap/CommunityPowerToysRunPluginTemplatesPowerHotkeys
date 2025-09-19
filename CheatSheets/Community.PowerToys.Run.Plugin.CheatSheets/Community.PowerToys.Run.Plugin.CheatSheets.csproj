@@ -10,8 +10,8 @@
 
   <ItemGroup>
     <PackageReference Include="Community.PowerToys.Run.Plugin.Dependencies" Version="0.93.0" />
-    <PackageReference Include="System.Runtime.Caching" Version="6.0.0" />
-    <PackageReference Include="System.Text.Json" Version="6.0.10" />
+    <PackageReference Include="System.Runtime.Caching" Version="8.0.0" />
+    <PackageReference Include="System.Text.Json" Version="9.0.9" />
   </ItemGroup>
 
   <ItemGroup>

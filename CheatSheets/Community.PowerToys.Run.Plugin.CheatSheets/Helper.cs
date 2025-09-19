@@ -1,6 +1,4 @@
    // Helper.cs - Utility Functions
-   using System;
-    
     public static class Helper
     {
         public static void OpenInBrowser(string url)

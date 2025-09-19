@@ -69,6 +69,8 @@ for dep in $DEPENDENCIES_TO_EXCLUDE; do
     find "$DEST_ARM64" -name "$dep" -delete 2>/dev/null || true
 done
 
+# Include shortcuts directory
+cp -r ./CheatSheets/Shortcuts "$DEST_ARM64/Shortcuts"
 
 # Create zip
 (cd "$DEST_ARM64" && zip -r "../../$(basename "$ZIP_ARM64")" .)
