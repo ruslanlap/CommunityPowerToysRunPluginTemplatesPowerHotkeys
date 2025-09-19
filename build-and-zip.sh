@@ -46,13 +46,8 @@ for dep in $DEPENDENCIES_TO_EXCLUDE; do
     find "$DEST_X64" -name "$dep" -delete 2>/dev/null || true
 done
 
-# Fix deps.json to remove problematic runtimepack dependency
-echo "🔧 Fixing deps.json to remove problematic dependency..."
-if [ -f "$DEST_X64/Community.PowerToys.Run.Plugin.CheatSheets.deps.json" ]; then
-    # Remove runtimepack.Microsoft.Windows.SDK.NET.Ref from dependencies list and definition
-    sed -i '/"runtimepack\.Microsoft\.Windows\.SDK\.NET\.Ref"/d' "$DEST_X64/Community.PowerToys.Run.Plugin.CheatSheets.deps.json"
-    sed -i '/runtimepack\.Microsoft\.Windows\.SDK\.NET\.Ref\/10\.0\.22621\.57/,/^      },$/d' "$DEST_X64/Community.PowerToys.Run.Plugin.CheatSheets.deps.json"
-fi
+# Keep original deps.json without modifications
+echo "🔧 Keeping original deps.json as-is..."
 
 
 # Create zip
@@ -75,13 +70,8 @@ for dep in $DEPENDENCIES_TO_EXCLUDE; do
     find "$DEST_ARM64" -name "$dep" -delete 2>/dev/null || true
 done
 
-# Fix deps.json to remove problematic runtimepack dependency
-echo "🔧 Fixing deps.json to remove problematic dependency..."
-if [ -f "$DEST_ARM64/Community.PowerToys.Run.Plugin.CheatSheets.deps.json" ]; then
-    # Remove runtimepack.Microsoft.Windows.SDK.NET.Ref from dependencies list and definition
-    sed -i '/"runtimepack\.Microsoft\.Windows\.SDK\.NET\.Ref"/d' "$DEST_ARM64/Community.PowerToys.Run.Plugin.CheatSheets.deps.json"
-    sed -i '/runtimepack\.Microsoft\.Windows\.SDK\.NET\.Ref\/10\.0\.22621\.57/,/^      },$/d' "$DEST_ARM64/Community.PowerToys.Run.Plugin.CheatSheets.deps.json"
-fi
+# Keep original deps.json without modifications  
+echo "🔧 Keeping original deps.json as-is..."
 
 
 
