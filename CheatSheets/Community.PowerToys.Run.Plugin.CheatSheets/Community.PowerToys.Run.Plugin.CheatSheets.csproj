@@ -6,9 +6,6 @@
     <Platforms>x64;ARM64</Platforms>
     <EnableWindowsTargeting>true</EnableWindowsTargeting>
     <PlatformTarget>$(Platform)</PlatformTarget>
-    <PublishSingleFile>false</PublishSingleFile>
-    <SelfContained>false</SelfContained>
-    <IncludeNativeLibrariesForSelfExtract>true</IncludeNativeLibrariesForSelfExtract>
   </PropertyGroup>
 
   <ItemGroup>

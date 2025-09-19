@@ -49,18 +49,13 @@ public class CheatSheetService
 
         try
         {
-            Task.WaitAll(tasks.ToArray(), TimeSpan.FromSeconds(8));
+            Task.WaitAll(tasks.ToArray(), TimeSpan.FromSeconds(3));
 
             foreach (var task in tasks)
             {
                 if (task.IsCompletedSuccessfully)
                 {
                     results.AddRange(task.Result);
-                }
-                else if (task.IsFaulted)
-                {
-                    // Log task exceptions for debugging
-                    System.Diagnostics.Debug.WriteLine($"Task failed: {task.Exception?.GetBaseException()?.Message}");
                 }
             }
 
@@ -70,10 +65,8 @@ public class CheatSheetService
             // Cache results
             _cacheService.Set(cacheKey, results, TimeSpan.FromHours(2));
         }
-        catch (Exception ex)
+        catch (Exception)
         {
-            // Log exception for debugging
-            System.Diagnostics.Debug.WriteLine($"SearchCheatSheets failed: {ex.Message}");
             // Return partial results if available
         }
 

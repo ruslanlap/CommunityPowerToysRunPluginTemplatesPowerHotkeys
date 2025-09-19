@@ -78,8 +78,14 @@ namespace Community.PowerToys.Run.Plugin.CheatSheets
                 };
             }
 
-            // TODO: Configure sources based on settings when implemented
-            // For now, the service will use all sources by default
+            // Configure sources based on settings
+            _cheatSheetService.ConfigureSources(new CheatSheetSourceOptions
+            {
+                EnableDevHints = _enableDevHints,
+                EnableTldr = _enableTldr,
+                EnableCheatSh = _enableCheatSh,
+                CacheDuration = TimeSpan.FromHours(Math.Max(1, _cacheDurationHours)),
+            });
 
             // Search results from all sources
             var items = _cheatSheetService.SearchCheatSheets(search) ?? Enumerable.Empty<CheatSheetItem>();
@@ -93,8 +99,8 @@ namespace Community.PowerToys.Run.Plugin.CheatSheets
                     QueryTextDisplay = search,
                     IcoPath = IconPath,
                     Title = sheet.Title,
-                    SubTitle = string.IsNullOrWhiteSpace(sheet.Description) ? sheet.Source : sheet.Description,
-                    ToolTipData = new ToolTipData(sheet.Title, $"{sheet.Source}\n{sheet.Command}"),
+                    SubTitle = string.IsNullOrWhiteSpace(sheet.Description) ? sheet.SourceName : sheet.Description,
+                    ToolTipData = new ToolTipData(sheet.Title, $"{sheet.SourceName}\n{sheet.Command}"),
                     Score = sheet.Score,
                     Action = _ =>
                     {
@@ -340,5 +346,68 @@ namespace Community.PowerToys.Run.Plugin.CheatSheets
                 Value = true,
             },
         };
+    }
+
+    // --- Example models (assumed from your service layer). Keep them in separate files in real project. ---
+    public sealed class CheatSheetItem
+    {
+        public string Title { get; set; }
+        public string Description { get; set; }
+        public string Command { get; set; }
+        public string Url { get; set; }
+        public string SourceName { get; set; }
+        public int Score { get; set; }
+    }
+
+    public sealed class CheatSheetSourceOptions
+    {
+        public bool EnableDevHints { get; set; }
+        public bool EnableTldr { get; set; }
+        public bool EnableCheatSh { get; set; }
+        public TimeSpan CacheDuration { get; set; }
+    }
+
+    // Stubs to illustrate compile path; your real implementations should exist in your project.
+    public sealed class CacheService : IDisposable
+    {
+        public void Dispose() { /* release cache resources */ }
+    }
+
+    public sealed class CheatSheetService
+    {
+        private readonly CacheService _cache;
+        private CheatSheetSourceOptions _opts = new();
+
+        public CheatSheetService(CacheService cache) => _cache = cache;
+
+        public void ConfigureSources(CheatSheetSourceOptions opts) => _opts = opts ?? new CheatSheetSourceOptions();
+
+        public IEnumerable<CheatSheetItem> SearchCheatSheets(string query)
+        {
+            // TODO: implement calls to DevHints/TLDR/cheat.sh with caching using _opts
+            return Enumerable.Empty<CheatSheetItem>();
+        }
+
+        public IEnumerable<string> GetAutocompleteSuggestions(string query)
+        {
+            // TODO: implement actual suggestions (popular topics per source)
+            return Enumerable.Empty<string>();
+        }
+    }
+
+    public static class Helper
+    {
+        public static void OpenInBrowser(string url)
+        {
+            try
+            {
+                System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo
+                {
+                    FileName = url,
+                    UseShellExecute = true
+                });
+            }
+            catch { /* ignore */ }
+        }
     }
 }

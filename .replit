@@ -1,5 +1,5 @@
 run = "dotnet run"
-modules = ["dotnet", "dotnet-8.0", "dotnet-9.0"]
+modules = ["dotnet"]
 
 [nix]
 channel = "stable-24_05"
@@ -9,26 +9,3 @@ run = ["sh", "-c", "dotnet run"]
 
 [agent]
 expertMode = true
-
-[workflows]
-runButton = "Project"
-
-[[workflows.workflow]]
-name = "Project"
-mode = "parallel"
-author = "agent"
-
-[[workflows.workflow.tasks]]
-task = "workflow.run"
-args = "Build CheatSheets Plugin"
-
-[[workflows.workflow]]
-name = "Build CheatSheets Plugin"
-author = "agent"
-
-[[workflows.workflow.tasks]]
-task = "shell.exec"
-args = "cd CheatSheets/Community.PowerToys.Run.Plugin.CheatSheets && dotnet build && echo \"✅ CheatSheets Plugin build completed successfully\""
-
-[workflows.workflow.metadata]
-outputType = "console"
