@@ -1,27 +1,51 @@
-// Main.cs - Plugin Entry Point
+// Main.cs - Plugin Entry Point (merged with template style)
+using ManagedCommon;
+using Microsoft.PowerToys.Settings.UI.Library;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Windows;
 using System.Windows.Controls;
-using Wox.Plugin;
-using ManagedCommon;
 using System.Windows.Input;
-using Microsoft.PowerToys.Settings.UI.Library;
+using Wox.Plugin;
 
 namespace Community.PowerToys.Run.Plugin.CheatSheets
 {
-    public class Main : IPlugin, IPluginI18n, IContextMenu, ISettingProvider, IDisposable
+    /// <summary>
+    /// Main class of this plugin that implements all used interfaces.
+    /// </summary>
+    public class Main : IPlugin, IContextMenu, IDisposable, IPluginI18n, ISettingProvider
     {
-        public static string PluginID => "B8C8F8E9A1B2C3D4E5F6G7H8I9J0K1L2";
-        private string IconPath { get; set; }
+        /// <summary>
+        /// ID of the plugin (kept from the working template).
+        /// </summary>
+        public static string PluginID => "41BF0604C51A4974A0BAA108826D0A94";
+
+        /// <summary>
+        /// Name of the plugin.
+        /// </summary>
+        public string Name => "Cheat Sheets Finder";
+
+        /// <summary>
+        /// Description of the plugin.
+        /// </summary>
+        public string Description => "Find cheat sheets and command examples instantly";
+
         private PluginInitContext Context { get; set; }
+
+        private string IconPath { get; set; }
+
         private bool Disposed { get; set; }
 
+        // --- Services from your original implementation ---
         private readonly CheatSheetService _cheatSheetService;
         private readonly CacheService _cacheService;
 
-        public string Name => "Cheat Sheets Finder";
-        public string Description => "Find cheat sheets and command examples instantly";
+        // --- Settings cache ---
+        private bool _enableDevHints = true;
+        private bool _enableTldr = true;
+        private bool _enableCheatSh = true;
+        private int _cacheDurationHours = 12;
 
         public Main()
         {
@@ -29,74 +53,113 @@ namespace Community.PowerToys.Run.Plugin.CheatSheets
             _cheatSheetService = new CheatSheetService(_cacheService);
         }
 
+        /// <summary>
+        /// Return a filtered list, based on the given query.
+        /// </summary>
+        /// <param name="query">The query to filter the list.</param>
+        /// <returns>A filtered list, can be empty when nothing was found.</returns>
         public List<Result> Query(Query query)
         {
-            if (string.IsNullOrWhiteSpace(query.Search))
+            var search = (query?.Search ?? string.Empty).Trim();
+
+            // Default help card
+            if (string.IsNullOrWhiteSpace(search))
             {
-                return GetDefaultResults();
+                return new List<Result>
+                {
+                    new Result
+                    {
+                        IcoPath = IconPath,
+                        Title = "Cheat Sheets Finder",
+                        SubTitle = "Type a command or tech to search (e.g., 'git reset', 'docker volume', 'regex lookahead')",
+                        ToolTipData = new ToolTipData("Cheat Sheets Finder", "Search across DevHints, TLDR, and cheat.sh"),
+                        Action = _ => true,
+                    }
+                };
             }
 
+            // Configure sources based on settings
+            _cheatSheetService.ConfigureSources(new CheatSheetSourceOptions
+            {
+                EnableDevHints = _enableDevHints,
+                EnableTldr = _enableTldr,
+                EnableCheatSh = _enableCheatSh,
+                CacheDuration = TimeSpan.FromHours(Math.Max(1, _cacheDurationHours)),
+            });
+
+            // Search results from all sources
+            var items = _cheatSheetService.SearchCheatSheets(search) ?? Enumerable.Empty<CheatSheetItem>();
+
             var results = new List<Result>();
-            var searchTerm = query.Search.Trim();
 
-            // Get cheat sheet results from all sources
-            var cheatSheets = _cheatSheetService.SearchCheatSheets(searchTerm);
-
-            foreach (var sheet in cheatSheets.Take(7))
+            foreach (var sheet in items.Take(7))
             {
                 results.Add(new Result
                 {
-                    Title = sheet.Title,
-                    SubTitle = sheet.Description,
+                    QueryTextDisplay = search,
                     IcoPath = IconPath,
+                    Title = sheet.Title,
+                    SubTitle = string.IsNullOrWhiteSpace(sheet.Description) ? sheet.SourceName : sheet.Description,
+                    ToolTipData = new ToolTipData(sheet.Title, $"{sheet.SourceName}\n{sheet.Command}"),
                     Score = sheet.Score,
-                    Action = c =>
+                    Action = _ =>
                     {
-                        System.Windows.Clipboard.SetText(sheet.Command);
+                        Clipboard.SetDataObject(sheet.Command ?? string.Empty);
                         return true;
                     },
-                    ContextData = sheet
+                    ContextData = sheet,
                 });
             }
 
-            // Add autocomplete suggestions
+            // If nothing matched, show autocomplete suggestions
             if (results.Count == 0)
             {
-                var suggestions = _cheatSheetService.GetAutocompleteSuggestions(searchTerm);
-                foreach (var suggestion in suggestions.Take(5))
+                var suggestions = _cheatSheetService.GetAutocompleteSuggestions(search) ?? Enumerable.Empty<string>();
+                foreach (var s in suggestions.Take(5))
                 {
                     results.Add(new Result
                     {
-                        Title = $"Search for: {suggestion}",
-                        SubTitle = "Press Enter to search",
+                        QueryTextDisplay = search,
                         IcoPath = IconPath,
+                        Title = $"Search for: {s}",
+                        SubTitle = "Press Enter to search",
                         Score = 50,
-                        Action = c =>
+                        Action = _ =>
                         {
-                            Context.API.ChangeQuery($"{Context.CurrentPluginMetadata.ActionKeyword} {suggestion}");
+                            Context.API.ChangeQuery($"{Context.CurrentPluginMetadata.ActionKeyword} {s}");
                             return false;
-                        }
+                        },
+                        ContextData = s,
                     });
                 }
+            }
+
+            // Fallback: simple copy of the raw query (kept from template behavior)
+            if (results.Count == 0)
+            {
+                results.Add(new Result
+                {
+                    QueryTextDisplay = search,
+                    IcoPath = IconPath,
+                    Title = "Copy query to clipboard",
+                    SubTitle = "No cheat sheets found. Press Enter to copy your text.",
+                    ToolTipData = new ToolTipData("Copy", "Copies your input to clipboard"),
+                    Action = _ =>
+                    {
+                        Clipboard.SetDataObject(search);
+                        return true;
+                    },
+                    ContextData = search,
+                });
             }
 
             return results;
         }
 
-        private List<Result> GetDefaultResults()
-        {
-            return new List<Result>
-            {
-                new Result
-                {
-                    Title = "Cheat Sheets Finder",
-                    SubTitle = "Type a command or technology name to search (e.g., 'git reset', 'docker volume')",
-                    IcoPath = IconPath,
-                    Score = 100
-                }
-            };
-        }
-
+        /// <summary>
+        /// Initialize the plugin with the given <see cref="PluginInitContext"/>.
+        /// </summary>
+        /// <param name="context">The <see cref="PluginInitContext"/> for this plugin.</param>
         public void Init(PluginInitContext context)
         {
             Context = context ?? throw new ArgumentNullException(nameof(context));
@@ -104,77 +167,153 @@ namespace Community.PowerToys.Run.Plugin.CheatSheets
             UpdateIconPath(Context.API.GetCurrentTheme());
         }
 
-        private void UpdateIconPath(Theme theme)
-        {
-            IconPath = theme == Theme.Light || theme == Theme.HighContrastWhite 
-                ? "Images/cheatsheet.light.png" 
-                : "Images/cheatsheet.dark.png";
-        }
-
-        private void OnThemeChanged(Theme currentTheme, Theme newTheme)
-        {
-            UpdateIconPath(newTheme);
-        }
-
-        public string GetTranslatedPluginTitle()
-        {
-            return "Cheat Sheets Finder";
-        }
-
-        public string GetTranslatedPluginDescription()
-        {
-            return "Find cheat sheets and command examples instantly";
-        }
-
+        /// <summary>
+        /// Return a list context menu entries for a given <see cref="Result"/> (shown at the right side of the result).
+        /// </summary>
+        /// <param name="selectedResult">The <see cref="Result"/> for the list with context menu entries.</param>
+        /// <returns>A list context menu entries.</returns>
         public List<ContextMenuResult> LoadContextMenus(Result selectedResult)
         {
-            var contextMenus = new List<ContextMenuResult>();
+            var menus = new List<ContextMenuResult>();
 
+            // Unified: copy (template), copy (Enter), open full page (Ctrl+Enter) when we have a CheatSheetItem
             if (selectedResult?.ContextData is CheatSheetItem item)
             {
-                contextMenus.Add(new ContextMenuResult
+                // Copy (Enter)
+                menus.Add(new ContextMenuResult
                 {
                     PluginName = Name,
                     Title = "Copy to clipboard (Enter)",
                     FontFamily = "Segoe MDL2 Assets",
-                    Glyph = "\xE8C8", // Copy icon
+                    Glyph = "\xE8C8", // Copy
                     AcceleratorKey = Key.Enter,
                     Action = _ =>
                     {
-                        System.Windows.Clipboard.SetText(item.Command);
+                        Clipboard.SetDataObject(item.Command ?? string.Empty);
                         return true;
-                    }
+                    },
                 });
 
-                contextMenus.Add(new ContextMenuResult
+                // Open in browser (Ctrl+Enter)
+                menus.Add(new ContextMenuResult
                 {
                     PluginName = Name,
                     Title = "Open full page (Ctrl+Enter)",
                     FontFamily = "Segoe MDL2 Assets",
-                    Glyph = "\xE774", // Globe icon
+                    Glyph = "\xE774", // Globe
                     AcceleratorKey = Key.Enter,
                     AcceleratorModifiers = ModifierKeys.Control,
                     Action = _ =>
                     {
-                        Helper.OpenInBrowser(item.Url);
+                        if (!string.IsNullOrWhiteSpace(item.Url))
+                        {
+                            Helper.OpenInBrowser(item.Url);
+                        }
                         return true;
-                    }
+                    },
                 });
             }
 
-            return contextMenus;
+            // Keep template’s generic copy (Ctrl+C) for plain string ContextData
+            if (selectedResult?.ContextData is string search)
+            {
+                menus.Add(new ContextMenuResult
+                {
+                    PluginName = Name,
+                    Title = "Copy to clipboard (Ctrl+C)",
+                    FontFamily = "Segoe MDL2 Assets",
+                    Glyph = "\xE8C8", // Copy
+                    AcceleratorKey = Key.C,
+                    AcceleratorModifiers = ModifierKeys.Control,
+                    Action = _ =>
+                    {
+                        Clipboard.SetDataObject(search);
+                        return true;
+                    },
+                });
+            }
+
+            return menus;
         }
 
+        /// <inheritdoc/>
+        public void Dispose()
+        {
+            Dispose(true);
+            GC.SuppressFinalize(this);
+        }
+
+        /// <summary>
+        /// Wrapper method for <see cref="Dispose()"/> that disposes additional objects and events from the plugin itself.
+        /// </summary>
+        /// <param name="disposing">Indicate that the plugin is disposed.</param>
+        protected virtual void Dispose(bool disposing)
+        {
+            if (Disposed || !disposing)
+            {
+                return;
+            }
+
+            if (Context?.API != null)
+            {
+                Context.API.ThemeChanged -= OnThemeChanged;
+            }
+
+            _cacheService?.Dispose();
+            Disposed = true;
+        }
+
+        private void UpdateIconPath(Theme theme) =>
+            IconPath = theme == Theme.Light || theme == Theme.HighContrastWhite
+                ? "Images/cheatsheets.light.png"
+                : "Images/cheatsheets.dark.png";
+
+        private void OnThemeChanged(Theme currentTheme, Theme newTheme) => UpdateIconPath(newTheme);
+
+        // --- IPluginI18n ---
+        public string GetTranslatedPluginTitle() => "Cheat Sheets Finder";
+        public string GetTranslatedPluginDescription() => "Find cheat sheets and command examples instantly";
+
+        // --- ISettingProvider ---
         public Control CreateSettingPanel()
         {
-            throw new NotImplementedException();
+            // Optional: return a real WPF control if you want a custom panel.
+            // For now keep it simple; settings are managed via AdditionalOptions.
+            return null;
         }
 
         public void UpdateSettings(PowerLauncherPluginSettings settings)
         {
-            // This method is required by ISettingProvider interface
-            // It's called when plugin settings are updated
-            // For this implementation, we don't need to handle settings updates
+            if (settings == null || settings.AdditionalOptions == null) return;
+
+            foreach (var option in settings.AdditionalOptions)
+            {
+                try
+                {
+                    switch (option.Key)
+                    {
+                        case "EnableDevHints":
+                            _enableDevHints = option.Value;
+                            break;
+                        case "EnableTldr":
+                            _enableTldr = option.Value;
+                            break;
+                        case "EnableCheatSh":
+                            _enableCheatSh = option.Value;
+                            break;
+                        case "CacheDurationHours":
+                            // AdditionalOptions exposes bool Value; many PT plugins use text/number via JSON settings.
+                            // If you wire a numeric input later, parse it here. For now keep a sensible default.
+                            // You can also stash numeric value via option.TextValue if available in your environment.
+                            _cacheDurationHours = Math.Max(1, _cacheDurationHours);
+                            break;
+                    }
+                }
+                catch
+                {
+                    // ignore malformed options and continue
+                }
+            }
         }
 
         public IEnumerable<PluginAdditionalOption> AdditionalOptions => new List<PluginAdditionalOption>
@@ -183,45 +322,92 @@ namespace Community.PowerToys.Run.Plugin.CheatSheets
             {
                 Key = "EnableDevHints",
                 DisplayLabel = "Enable DevHints.io",
-                Value = true
+                Value = true,
             },
             new PluginAdditionalOption
             {
                 Key = "EnableTldr",
                 DisplayLabel = "Enable TLDR",
-                Value = true
+                Value = true,
             },
             new PluginAdditionalOption
             {
                 Key = "EnableCheatSh",
-                DisplayLabel = "Enable Cheat.sh",
-                Value = true
+                DisplayLabel = "Enable cheat.sh",
+                Value = true,
             },
+            // NOTE: PowerToys exposes AdditionalOptions as bools by default.
+            // If you want a true numeric field, define JSON settings schema and bind it.
+            // Here we keep the toggle to "enable long cache" as a simple placeholder.
             new PluginAdditionalOption
             {
                 Key = "CacheDurationHours",
-                DisplayLabel = "Cache Duration (hours)",
-                Value = true
-            }
+                DisplayLabel = "Use extended cache duration",
+                Value = true,
+            },
         };
+    }
 
-        public void Dispose()
+    // --- Example models (assumed from your service layer). Keep them in separate files in real project. ---
+    public sealed class CheatSheetItem
+    {
+        public string Title { get; set; }
+        public string Description { get; set; }
+        public string Command { get; set; }
+        public string Url { get; set; }
+        public string SourceName { get; set; }
+        public int Score { get; set; }
+    }
+
+    public sealed class CheatSheetSourceOptions
+    {
+        public bool EnableDevHints { get; set; }
+        public bool EnableTldr { get; set; }
+        public bool EnableCheatSh { get; set; }
+        public TimeSpan CacheDuration { get; set; }
+    }
+
+    // Stubs to illustrate compile path; your real implementations should exist in your project.
+    public sealed class CacheService : IDisposable
+    {
+        public void Dispose() { /* release cache resources */ }
+    }
+
+    public sealed class CheatSheetService
+    {
+        private readonly CacheService _cache;
+        private CheatSheetSourceOptions _opts = new();
+
+        public CheatSheetService(CacheService cache) => _cache = cache;
+
+        public void ConfigureSources(CheatSheetSourceOptions opts) => _opts = opts ?? new CheatSheetSourceOptions();
+
+        public IEnumerable<CheatSheetItem> SearchCheatSheets(string query)
         {
-            Dispose(true);
-            GC.SuppressFinalize(this);
+            // TODO: implement calls to DevHints/TLDR/cheat.sh with caching using _opts
+            return Enumerable.Empty<CheatSheetItem>();
         }
 
-        protected virtual void Dispose(bool disposing)
+        public IEnumerable<string> GetAutocompleteSuggestions(string query)
         {
-            if (!Disposed && disposing)
+            // TODO: implement actual suggestions (popular topics per source)
+            return Enumerable.Empty<string>();
+        }
+    }
+
+    public static class Helper
+    {
+        public static void OpenInBrowser(string url)
+        {
+            try
             {
-                if (Context?.API != null)
+                System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo
                 {
-                    Context.API.ThemeChanged -= OnThemeChanged;
-                }
-                _cacheService?.Dispose();
-                Disposed = true;
+                    FileName = url,
+                    UseShellExecute = true
+                });
             }
+            catch { /* ignore */ }
         }
     }
-    }
+}
