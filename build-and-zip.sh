@@ -50,8 +50,10 @@ done
 echo "🔧 Keeping original deps.json as-is..."
 
 
-# Create zip
-(cd "$DEST_X64" && zip -r "../../$(basename "$ZIP_X64")" .)
+# Create properly structured zip with plugin folder
+mkdir -p "$DEST_X64/../CheatSheets" 
+cp -r "$DEST_X64"/* "$DEST_X64/../CheatSheets/"
+(cd "$DEST_X64/.." && zip -r "../$(basename "$ZIP_X64")" CheatSheets/)
 
 # Package ARM64
 echo "📦 Packaging ARM64..."
@@ -75,8 +77,10 @@ echo "🔧 Keeping original deps.json as-is..."
 
 
 
-# Create zip
-(cd "$DEST_ARM64" && zip -r "../../$(basename "$ZIP_ARM64")" .)
+# Create properly structured zip with plugin folder  
+mkdir -p "$DEST_ARM64/../CheatSheets"
+cp -r "$DEST_ARM64"/* "$DEST_ARM64/../CheatSheets/"
+(cd "$DEST_ARM64/.." && zip -r "../$(basename "$ZIP_ARM64")" CheatSheets/)
 
 echo "✅ Done! Created:"
 echo " - $ZIP_X64"
