@@ -4,16 +4,16 @@
 set -e
 
 # Clean up previous builds
-rm -rf ./Hotkeys/Publish
-rm -rf ./Hotkeys/Community.PowerToys.Run.Plugin.Hotkeys/obj
-rm -rf ./Hotkeys/Community.PowerToys.Run.Plugin.Hotkeys/bin
-rm -rf ./Hotkeys-*.zip
+rm -rf ./CheatSheets/Publish
+rm -rf ./CheatSheets/Community.PowerToys.Run.Plugin.CheatSheets/obj
+rm -rf ./CheatSheets/Community.PowerToys.Run.Plugin.CheatSheets/bin
+rm -rf ./CheatSheets-*.zip
 
-PROJECT_PATH="Hotkeys/Community.PowerToys.Run.Plugin.Hotkeys/Community.PowerToys.Run.Plugin.Hotkeys.csproj"
-PLUGIN_NAME="Hotkeys"
+PROJECT_PATH="CheatSheets/Community.PowerToys.Run.Plugin.CheatSheets/Community.PowerToys.Run.Plugin.CheatSheets.csproj"
+PLUGIN_NAME="CheatSheets"
 
 # Get version from plugin.json
-VERSION=$(grep '"Version"' Hotkeys/Community.PowerToys.Run.Plugin.Hotkeys/plugin.json | sed 's/.*"Version": "\([^"]*\)".*/\1/')
+VERSION=$(grep '"Version"' CheatSheets/Community.PowerToys.Run.Plugin.CheatSheets/plugin.json | sed 's/.*"Version": "\([^"]*\)".*/\1/')
 
 echo "📋 Plugin: $PLUGIN_NAME"
 echo "📋 Version: $VERSION"
@@ -31,8 +31,8 @@ dotnet publish "$PROJECT_PATH" -c Release -r win-arm64 --self-contained false
 
 # Package x64
 echo "📦 Packaging x64..."
-PUBLISH_X64="./Hotkeys/Community.PowerToys.Run.Plugin.Hotkeys/bin/Release/net9.0-windows10.0.22621.0/win-x64/publish"
-DEST_X64="./Hotkeys/Publish/x64"
+PUBLISH_X64="./CheatSheets/Community.PowerToys.Run.Plugin.CheatSheets/bin/Release/net9.0-windows10.0.22621.0/win-x64/publish"
+DEST_X64="./CheatSheets/Publish/x64"
 ZIP_X64="./${PLUGIN_NAME}-${VERSION}-x64.zip"
 
 rm -rf "$DEST_X64"
@@ -47,15 +47,15 @@ for dep in $DEPENDENCIES_TO_EXCLUDE; do
 done
 
 # Include shortcuts directory
-cp -r ./Hotkeys/Shortcuts "$DEST_X64/Shortcuts"
+cp -r ./CheatSheets/Shortcuts "$DEST_X64/Shortcuts"
 
 # Create zip
 (cd "$DEST_X64" && zip -r "../../$(basename "$ZIP_X64")" .)
 
 # Package ARM64
 echo "📦 Packaging ARM64..."
-PUBLISH_ARM64="./Hotkeys/Community.PowerToys.Run.Plugin.Hotkeys/bin/Release/net9.0-windows10.0.22621.0/win-arm64/publish"
-DEST_ARM64="./Hotkeys/Publish/arm64"
+PUBLISH_ARM64="./CheatSheets/Community.PowerToys.Run.Plugin.CheatSheets/bin/Release/net9.0-windows10.0.22621.0/win-arm64/publish"
+DEST_ARM64="./CheatSheets/Publish/arm64"
 ZIP_ARM64="./${PLUGIN_NAME}-${VERSION}-arm64.zip"
 
 rm -rf "$DEST_ARM64"
@@ -70,7 +70,7 @@ for dep in $DEPENDENCIES_TO_EXCLUDE; do
 done
 
 # Include shortcuts directory
-cp -r ./Hotkeys/Shortcuts "$DEST_ARM64/Shortcuts"
+cp -r ./CheatSheets/Shortcuts "$DEST_ARM64/Shortcuts"
 
 # Create zip
 (cd "$DEST_ARM64" && zip -r "../../$(basename "$ZIP_ARM64")" .)

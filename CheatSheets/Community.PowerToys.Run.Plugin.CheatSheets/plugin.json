@@ -1,0 +1,14 @@
+{
+  "ID": "B8C8F8E9A1B2C3D4E5F6G7H8I9J0K1L2",
+  "ActionKeyword": "cs",
+  "IsGlobal": false,
+  "Name": "CheatSheets",
+  "Author": "ruslanlap",
+  "Version": "1.0.0",
+  "Language": "csharp",
+  "Website": "https://github.com/ruslanlap/PowerToysRun-CheatSheets",
+  "ExecuteFileName": "Community.PowerToys.Run.Plugin.CheatSheets.dll",
+  "IcoPathDark": "Images\\cheatsheets.dark.png",
+  "IcoPathLight": "Images\\cheatsheets.light.png",
+  "DynamicLoading": false
+}

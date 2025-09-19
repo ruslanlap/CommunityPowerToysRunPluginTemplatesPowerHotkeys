@@ -1,0 +1,16 @@
+HSA-hh2w-p6rv-4g7w
+  Community.PowerToys.Run.Plugin.CheatSheets failed with 8 error(s) and 2 warning(s) (2.4s)
+    /home/runner/workspace/CheatSheets/Community.PowerToys.Run.Plugin.CheatSheets/Community.PowerToys.Run.Plugin.CheatSheets.csproj : warning NU1903: Package 'System.Text.Json' 8.0.0 has a known high severity vulnerability, https://github.com/advisories/GHSA-8g4q-xg66-9fp4
+    /home/runner/workspace/CheatSheets/Community.PowerToys.Run.Plugin.CheatSheets/Community.PowerToys.Run.Plugin.CheatSheets.csproj : warning NU1903: Package 'System.Text.Json' 8.0.0 has a known high severity vulnerability, https://github.com/advisories/GHSA-hh2w-p6rv-4g7w
+    /home/runner/workspace/CheatSheets/Community.PowerToys.Run.Plugin.CheatSheets/CacheService.cs(4,31): error CS0246: The type or namespace name 'IDisposable' could not be found (are you missing a using directive or an assembly reference?)
+    /home/runner/workspace/CheatSheets/Community.PowerToys.Run.Plugin.CheatSheets/CheatSheetService.cs(27,12): error CS0246: The type or namespace name 'List<>' could not be found (are you missing a using directive or an assembly reference?)
+    /home/runner/workspace/CheatSheets/Community.PowerToys.Run.Plugin.CheatSheets/CheatSheetService.cs(73,24): error CS0246: The type or namespace name 'List<>' could not be found (are you missing a using directive or an assembly reference?)
+    /home/runner/workspace/CheatSheets/Community.PowerToys.Run.Plugin.CheatSheets/CheatSheetService.cs(120,24): error CS0246: The type or namespace name 'List<>' could not be found (are you missing a using directive or an assembly reference?)
+    /home/runner/workspace/CheatSheets/Community.PowerToys.Run.Plugin.CheatSheets/CheatSheetService.cs(153,24): error CS0246: The type or namespace name 'List<>' could not be found (are you missing a using directive or an assembly reference?)
+    /home/runner/workspace/CheatSheets/Community.PowerToys.Run.Plugin.CheatSheets/CheatSheetService.cs(201,12): error CS0246: The type or namespace name 'List<>' could not be found (are you missing a using directive or an assembly reference?)
+    /home/runner/workspace/CheatSheets/Community.PowerToys.Run.Plugin.CheatSheets/CacheService.cs(19,47): error CS0246: The type or namespace name 'TimeSpan' could not be found (are you missing a using directive or an assembly reference?)
+    /home/runner/workspace/CheatSheets/Community.PowerToys.Run.Plugin.CheatSheets/Main.cs(13,61): error CS0535: 'Main' does not implement interface member 'ISettingProvider.UpdateSettings(PowerLauncherPluginSettings)'
+
+Build failed with 8 error(s) and 4 warning(s) in 4.0s
+~/workspace$ echo "No fix command available"
+No fix command available
