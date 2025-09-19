@@ -170,6 +170,13 @@ namespace Community.PowerToys.Run.Plugin.CheatSheets
             throw new NotImplementedException();
         }
 
+        public void UpdateSettings(PowerLauncherPluginSettings settings)
+        {
+            // This method is required by ISettingProvider interface
+            // It's called when plugin settings are updated
+            // For this implementation, we don't need to handle settings updates
+        }
+
         public IEnumerable<PluginAdditionalOption> AdditionalOptions => new List<PluginAdditionalOption>
         {
             new PluginAdditionalOption
