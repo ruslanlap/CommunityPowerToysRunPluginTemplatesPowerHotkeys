@@ -348,4 +348,66 @@ namespace Community.PowerToys.Run.Plugin.CheatSheets
         };
     }
 
+    // --- Example models (assumed from your service layer). Keep them in separate files in real project. ---
+    public sealed class CheatSheetItem
+    {
+        public string Title { get; set; }
+        public string Description { get; set; }
+        public string Command { get; set; }
+        public string Url { get; set; }
+        public string SourceName { get; set; }
+        public int Score { get; set; }
+    }
+
+    public sealed class CheatSheetSourceOptions
+    {
+        public bool EnableDevHints { get; set; }
+        public bool EnableTldr { get; set; }
+        public bool EnableCheatSh { get; set; }
+        public TimeSpan CacheDuration { get; set; }
+    }
+
+    // Stubs to illustrate compile path; your real implementations should exist in your project.
+    public sealed class CacheService : IDisposable
+    {
+        public void Dispose() { /* release cache resources */ }
+    }
+
+    public sealed class CheatSheetService
+    {
+        private readonly CacheService _cache;
+        private CheatSheetSourceOptions _opts = new();
+
+        public CheatSheetService(CacheService cache) => _cache = cache;
+
+        public void ConfigureSources(CheatSheetSourceOptions opts) => _opts = opts ?? new CheatSheetSourceOptions();
+
+        public IEnumerable<CheatSheetItem> SearchCheatSheets(string query)
+        {
+            // TODO: implement calls to DevHints/TLDR/cheat.sh with caching using _opts
+            return Enumerable.Empty<CheatSheetItem>();
+        }
+
+        public IEnumerable<string> GetAutocompleteSuggestions(string query)
+        {
+            // TODO: implement actual suggestions (popular topics per source)
+            return Enumerable.Empty<string>();
+        }
+    }
+
+    public static class Helper
+    {
+        public static void OpenInBrowser(string url)
+        {
+            try
+            {
+                System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo
+                {
+                    FileName = url,
+                    UseShellExecute = true
+                });
+            }
+            catch { /* ignore */ }
+        }
+    }
 }

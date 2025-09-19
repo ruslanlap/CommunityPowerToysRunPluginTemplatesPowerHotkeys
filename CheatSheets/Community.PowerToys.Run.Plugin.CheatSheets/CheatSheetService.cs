@@ -7,9 +7,7 @@ using System.Text.Json;
 using System.Threading.Tasks;
 using System.Text.RegularExpressions;
 
-namespace Community.PowerToys.Run.Plugin.CheatSheets
-{
-    public class CheatSheetService
+public class CheatSheetService
 {
     private readonly HttpClient _httpClient;
     private readonly CacheService _cacheService;
@@ -106,7 +104,7 @@ namespace Community.PowerToys.Run.Plugin.CheatSheets
                             Description = string.IsNullOrEmpty(currentDescription) ? "From cheat.sh" : currentDescription,
                             Command = currentCommand,
                             Url = $"https://cheat.sh/{Uri.EscapeDataString(searchTerm)}",
-                            SourceName = "cheat.sh",
+                            Source = "cheat.sh",
                             Score = CalculateScore(searchTerm, currentCommand, currentDescription)
                         });
                     }
@@ -142,7 +140,7 @@ namespace Community.PowerToys.Run.Plugin.CheatSheets
                     Description = "Open comprehensive cheat sheet on DevHints.io",
                     Command = url,
                     Url = url,
-                    SourceName = "devhints.io",
+                    Source = "devhints.io",
                     Score = 80
                 });
             }
@@ -188,7 +186,7 @@ namespace Community.PowerToys.Run.Plugin.CheatSheets
                             Description = currentDesc ?? "TLDR example",
                             Command = currentCmd,
                             Url = $"https://tldr.inbrowser.app/pages/common/{command}",
-                            SourceName = "tldr",
+                            Source = "tldr",
                             Score = CalculateScore(searchTerm, currentCmd, currentDesc)
                         });
                     }
@@ -255,6 +253,5 @@ namespace Community.PowerToys.Run.Plugin.CheatSheets
         }
 
         return score;
-    }
     }
 }
