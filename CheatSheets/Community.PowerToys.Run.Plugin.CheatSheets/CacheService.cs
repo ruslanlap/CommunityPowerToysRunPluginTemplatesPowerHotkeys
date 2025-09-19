@@ -1,8 +1,10 @@
 // CacheService.cs - Caching Implementation
-  using System;
-  using System.Runtime.Caching;
+using System;
+using System.Runtime.Caching;
 
-  public class CacheService : IDisposable
+namespace Community.PowerToys.Run.Plugin.CheatSheets
+{
+    public class CacheService : IDisposable
   {
       private readonly MemoryCache _cache;
       private bool _disposed;
@@ -35,3 +37,4 @@
           }
       }
   }
+}
