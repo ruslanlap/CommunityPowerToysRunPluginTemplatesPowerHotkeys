@@ -23,15 +23,15 @@ DEPENDENCIES_TO_EXCLUDE="PowerToys.Common.UI.* PowerToys.ManagedCommon.* PowerTo
 
 # Build for x64
 echo "🛠️  Building for x64..."
-dotnet publish "$PROJECT_PATH" -c Release -r win-x64 --self-contained false
+dotnet publish "$PROJECT_PATH" -c Release -r win-x64 --self-contained false --no-dependencies
 
 # Build for ARM64  
 echo "🛠️  Building for ARM64..."
-dotnet publish "$PROJECT_PATH" -c Release -r win-arm64 --self-contained false
+dotnet publish "$PROJECT_PATH" -c Release -r win-arm64 --self-contained false --no-dependencies
 
 # Package x64
 echo "📦 Packaging x64..."
-PUBLISH_X64="./CheatSheets/Community.PowerToys.Run.Plugin.CheatSheets/bin/Release/net9.0-windows10.0.22621.0/win-x64/publish"
+PUBLISH_X64="./CheatSheets/Community.PowerToys.Run.Plugin.CheatSheets/bin/Release/net9.0-windows/win-x64/publish"
 DEST_X64="./CheatSheets/Publish/x64"
 ZIP_X64="./${PLUGIN_NAME}-${VERSION}-x64.zip"
 
@@ -52,7 +52,7 @@ done
 
 # Package ARM64
 echo "📦 Packaging ARM64..."
-PUBLISH_ARM64="./CheatSheets/Community.PowerToys.Run.Plugin.CheatSheets/bin/Release/net9.0-windows10.0.22621.0/win-arm64/publish"
+PUBLISH_ARM64="./CheatSheets/Community.PowerToys.Run.Plugin.CheatSheets/bin/Release/net9.0-windows/win-arm64/publish"
 DEST_ARM64="./CheatSheets/Publish/arm64"
 ZIP_ARM64="./${PLUGIN_NAME}-${VERSION}-arm64.zip"
 
