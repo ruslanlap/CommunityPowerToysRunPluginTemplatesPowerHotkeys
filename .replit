@@ -1,4 +1,5 @@
 run = "dotnet run"
+modules = ["dotnet"]
 
 [nix]
 channel = "stable-24_05"
