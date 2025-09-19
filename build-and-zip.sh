@@ -23,15 +23,15 @@ DEPENDENCIES_TO_EXCLUDE="PowerToys.Common.UI.* PowerToys.ManagedCommon.* PowerTo
 
 # Build for x64
 echo "🛠️  Building for x64..."
-dotnet publish "$PROJECT_PATH" -c Release -r win-x64 --self-contained false --no-dependencies
+dotnet publish "$PROJECT_PATH" -c Release -r win-x64 --self-contained false
 
 # Build for ARM64  
 echo "🛠️  Building for ARM64..."
-dotnet publish "$PROJECT_PATH" -c Release -r win-arm64 --self-contained false --no-dependencies
+dotnet publish "$PROJECT_PATH" -c Release -r win-arm64 --self-contained false
 
 # Package x64
 echo "📦 Packaging x64..."
-PUBLISH_X64="./CheatSheets/Community.PowerToys.Run.Plugin.CheatSheets/bin/Release/net9.0-windows/win-x64/publish"
+PUBLISH_X64="./CheatSheets/Community.PowerToys.Run.Plugin.CheatSheets/bin/Release/net9.0-windows10.0.22621.0/win-x64/publish"
 DEST_X64="./CheatSheets/Publish/x64"
 ZIP_X64="./${PLUGIN_NAME}-${VERSION}-x64.zip"
 
@@ -46,13 +46,21 @@ for dep in $DEPENDENCIES_TO_EXCLUDE; do
     find "$DEST_X64" -name "$dep" -delete 2>/dev/null || true
 done
 
+# Fix deps.json to remove problematic runtimepack dependency
+echo "🔧 Fixing deps.json to remove problematic dependency..."
+if [ -f "$DEST_X64/Community.PowerToys.Run.Plugin.CheatSheets.deps.json" ]; then
+    # Remove runtimepack.Microsoft.Windows.SDK.NET.Ref from dependencies list and definition
+    sed -i '/"runtimepack\.Microsoft\.Windows\.SDK\.NET\.Ref"/d' "$DEST_X64/Community.PowerToys.Run.Plugin.CheatSheets.deps.json"
+    sed -i '/runtimepack\.Microsoft\.Windows\.SDK\.NET\.Ref\/10\.0\.22621\.57/,/^      },$/d' "$DEST_X64/Community.PowerToys.Run.Plugin.CheatSheets.deps.json"
+fi
+
 
 # Create zip
 (cd "$DEST_X64" && zip -r "../../$(basename "$ZIP_X64")" .)
 
 # Package ARM64
 echo "📦 Packaging ARM64..."
-PUBLISH_ARM64="./CheatSheets/Community.PowerToys.Run.Plugin.CheatSheets/bin/Release/net9.0-windows/win-arm64/publish"
+PUBLISH_ARM64="./CheatSheets/Community.PowerToys.Run.Plugin.CheatSheets/bin/Release/net9.0-windows10.0.22621.0/win-arm64/publish"
 DEST_ARM64="./CheatSheets/Publish/arm64"
 ZIP_ARM64="./${PLUGIN_NAME}-${VERSION}-arm64.zip"
 
@@ -66,6 +74,14 @@ cp -r "$PUBLISH_ARM64"/* "$DEST_ARM64/"
 for dep in $DEPENDENCIES_TO_EXCLUDE; do
     find "$DEST_ARM64" -name "$dep" -delete 2>/dev/null || true
 done
+
+# Fix deps.json to remove problematic runtimepack dependency
+echo "🔧 Fixing deps.json to remove problematic dependency..."
+if [ -f "$DEST_ARM64/Community.PowerToys.Run.Plugin.CheatSheets.deps.json" ]; then
+    # Remove runtimepack.Microsoft.Windows.SDK.NET.Ref from dependencies list and definition
+    sed -i '/"runtimepack\.Microsoft\.Windows\.SDK\.NET\.Ref"/d' "$DEST_ARM64/Community.PowerToys.Run.Plugin.CheatSheets.deps.json"
+    sed -i '/runtimepack\.Microsoft\.Windows\.SDK\.NET\.Ref\/10\.0\.22621\.57/,/^      },$/d' "$DEST_ARM64/Community.PowerToys.Run.Plugin.CheatSheets.deps.json"
+fi
 
 
 
