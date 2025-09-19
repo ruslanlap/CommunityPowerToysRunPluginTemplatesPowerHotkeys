@@ -13,7 +13,6 @@
             }
             catch (Exception)
             {
-                // Fail silently
             }
         }
     }
