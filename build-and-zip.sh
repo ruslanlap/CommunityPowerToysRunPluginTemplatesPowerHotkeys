@@ -18,8 +18,8 @@ VERSION=$(grep '"Version"' CheatSheets/Community.PowerToys.Run.Plugin.CheatSheet
 echo "📋 Plugin: $PLUGIN_NAME"
 echo "📋 Version: $VERSION"
 
-# Dependencies to exclude (these are provided by PowerToys)
-DEPENDENCIES_TO_EXCLUDE="PowerToys.Common.UI.* PowerToys.ManagedCommon.* PowerToys.Settings.UI.Lib.* Wox.Infrastructure.* Wox.Plugin.*"
+# Dependencies to exclude (keep PowerToys dependencies as they seem to be needed)
+DEPENDENCIES_TO_EXCLUDE=""
 
 # Build for x64
 echo "🛠️  Building for x64..."
